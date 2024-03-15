@@ -1,3 +1,7 @@
+! Author: Tanya Smirnova (tanya.smirnova@noaa.gov)
+! 15 march 2024 - RUC LSM is updated to the version used in RRFS version 1.
+! Most changes are in the snow model.
+!
 #define lsmruc_dbg_lvl 3000
 !wrf:model_layer:physics
 !
@@ -95,54 +99,54 @@ contains
    implicit none
 !-----------------------------------------------------------------
 !
-! the ruc lsm model is described in:
-!  smirnova, t.g., j.m. brown, and s.g. benjamin, 1997:
+! the RUC LSM model is described in:
+!  Smirnova, T.G., J.M. Brown, and S.G. Benjamin, 1997:
 !     performance of different soil model configurations in simulating
 !     ground surface temperature and surface fluxes.
 !     mon. wea. rev. 125, 1870-1884.
-!  smirnova, t.g., j.m. brown, and d. kim, 2000: parameterization of
+!  Smirnova, T.G., J.M. Brown, and D. Kim, 2000: parameterization of
 !     cold-season processes in the maps land-surface scheme.
 !     j. geophys. res. 105, 4077-4086.
 !-----------------------------------------------------------------
 !-- dt            time step (second)
-!        ktau - number of time step
-!        nsl  - number of soil layers
-!        nzs  - number of levels in soil
-!        zs   - depth of soil levels (m)
+!   ktau - number of time step
+!   nsl  - number of soil layers
+!   nzs  - number of levels in soil
+!   zs   - depth of soil levels (m)
 !-- rainbl    - accumulated rain in [mm] between the pbl calls
 !-- rainncv         one time step grid scale precipitation (mm/step)
-!        snow - snow water equivalent [mm]
-!        frazfrac - fraction of frozen precipitation
+!-- snow - snow water equivalent [mm]
+!-- frazfrac - fraction of frozen precipitation
 !-- precipfr (mm) - time step frozen precipitation
 !-- snowc       flag indicating snow coverage (1 for snow cover)
 !-- z3d         heights (m)
 !-- p8w         3d pressure (pa)
 !-- t3d         temperature (k)
 !-- qv3d        3d water vapor mixing ratio (kg/kg)
-!        qc3d - 3d cloud water mixing ratio (kg/kg)
-!       rho3d - 3d air density (kg/m^3)
+!-- qc3d - 3d cloud water mixing ratio (kg/kg)
+!-- rho3d - 3d air density (kg/m^3)
 !-- glw         downward long wave flux at ground surface (w/m^2)
 !-- gsw         absorbed short wave flux at ground surface (w/m^2)
 !-- emiss       surface emissivity (between 0 and 1)
-!        flqc - surface exchange coefficient for moisture (kg/m^2/s)
-!        flhc - surface exchange coefficient for heat [w/m^2/s/degreek]
-!      sfcexc - surface exchange coefficient for heat [m/s]
-!      canwat - canopy moisture content (mm)
-!      vegfra - vegetation fraction (between 0 and 100)
-!         alb - surface albedo (between 0 and 1)
-!      snoalb - maximum snow albedo (between 0 and 1)
-!      albbck - snow-free albedo (between 0 and 1)
-!         znt - roughness length [m]
+!   flqc - surface exchange coefficient for moisture (kg/m^2/s)
+!   flhc - surface exchange coefficient for heat [w/m^2/s/degreek]
+!   sfcexc - surface exchange coefficient for heat [m/s]
+!   canwat - canopy moisture content (mm)
+!   vegfra - vegetation fraction (between 0 and 100)
+!   alb - surface albedo (between 0 and 1)
+!   snoalb - maximum snow albedo (between 0 and 1)
+!   albbck - snow-free albedo (between 0 and 1)
+!   znt - roughness length [m]
 !-- tbot        soil temperature at lower boundary (k)
-!      ivgtyp - usgs vegetation type (24 classes)
-!      isltyp - stasgo soil type (16 classes)
+!   ivgtyp - usgs vegetation type (24 classes)
+!   isltyp - stasgo soil type (16 classes)
 !-- xland       land mask (1 for land, 2 for water)
 !-- cp          heat capacity at constant pressure for dry air (j/kg/k)
 !-- g0          acceleration due to gravity (m/s^2)
 !-- lv          latent heat of melting (j/kg)
 !-- stbolt      stefan-boltzmann constant (w/m^2/k^4)
-!    soilmois - soil moisture content (volumetric fraction)
-!         tso - soil temp (k)
+!   soilmois - soil moisture content (volumetric fraction)
+!   tso - soil temp (k)
 !-- soilt       surface temperature (k)
 !-- hfx         upward heat flux at the surface (w/m^2)
 !-- qfx         upward moisture flux at the surface (kg/m^2/s)
@@ -208,7 +212,6 @@ contains
                                                          vegfra, &
                                                            tbot
 
-!beka
    real,       dimension( ims:ime , jms:jme ),                   &
                intent(inout   )    ::         flqc,flhc
 
@@ -305,7 +308,7 @@ contains
                                                           prcpl, &
                                                          seaice, &
                                                         infiltr
-! energy and water budget variables:
+!-- energy and water budget variables:
    real,       dimension( its:ite, jts:jte )    ::               &
                                                          budget, &
                                                        acbudget, &
@@ -321,10 +324,10 @@ contains
                                                          smfr3d
 
    real,       dimension( ims:ime, jms:jme ), intent(out)     :: &
-                                                         rhosnf, & !rho of snowfall
+                                                         rhosnf, & ! rho of snowfall
                                                        precipfr, & ! time-step frozen precip
                                                      snowfallac
-!--- soil/snow properties
+!-- soil/snow properties
    real                                                          &
                              ::                           rhocs, &
                                                        rhonewsn, &
@@ -412,7 +415,6 @@ contains
    logical   :: print_flag = .false.
    real,dimension(ims:ime,1:nsl,jms:jme) :: rstoch
    real,dimension(1:nsl)::rstoch_temp,field_sf_temp
-!beka
    real,dimension(ims:ime,jms:jme)::emisso,vegfrao,albo,snoalbo
    real,dimension(its:ite,jts:jte)::emisslo
 
@@ -444,21 +446,18 @@ contains
 
         do k=1,5001
           cq=cq+.05
-!          tbq(k)=r61*exp(arp*(r273-1./cq)-brp*log(cq*r273))
-        evs=exp(17.67*(cq-273.15)/(cq-29.65))
-        eis=exp(22.514-6.15e3/cq)
-        if(cq.ge.273.15) then
-! tbq is in mb
-        tbq(k) = r61*evs
-        else
-        tbq(k) = r61*eis
-        endif
+          evs=exp(17.67*(cq-273.15)/(cq-29.65))
+          eis=exp(22.514-6.15e3/cq)
+          if(cq.ge.273.15) then
+          ! tbq is in mb
+            tbq(k) = r61*evs
+          else
+            tbq(k) = r61*eis
+          endif
 
         end do
 
 !--- initialize soil/vegetation parameters
-!--- this is temporary until si is added to mass coordinate ---!!!!!
-
 #if ( nmm_core == 1 )
      if(ktau+1.eq.1) then
 #else
@@ -469,11 +468,7 @@ contains
             do k=1,nsl
        keepfr3dflag(i,k,j)=0.
             enddo
-!--- initializing snow fraction, thereshold = 32 mm of snow water '
-!    or ~100 mm of snow height
-!
-           !snowc(i,j) = min(1.,snow(i,j)/32.)
-          !if(snow(i,j).le.32.) soilt1(i,j)=tso(i,1,j)
+!--- initializing snow fraction, thereshold = 32 mm of snow water or ~100 mm of snow height
 call physics_message('!--- initializing inside snow temp if it is not defined')
        if((soilt1(i,j) .lt. 170.) .or. (soilt1(i,j) .gt.400.)) then
          if(snowc(i,j).gt.0.) then
@@ -487,7 +482,7 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
            soilt1(i,j) = tso(i,1,j)
          endif ! snowc
        endif ! soilt1
-! --temperature inside snow initialized
+       !-- temperature inside snow is initialized
            tsnav(i,j) =0.5*(soilt(i,j)+tso(i,1,j))-273.15
            patmb=p8w(i,kms,j)*1.e-2
            qsg  (i,j) = qsn(soilt(i,j),tbq)/patmb
@@ -608,7 +603,7 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
          prcpncliq = rainncv(i,j)*(1.-frzfrac(i,j))
          prcpncfr = rainncv(i,j)*frzfrac(i,j)
 !- apply the same frozen precipitation fraction to convective precip
-!tgs - 31 mar17 - add safety temperature check in case thompson mp produces
+!- 31 mar17 - add safety temperature check in case thompson mp produces
 !                 frozen precip at t > 273.
        if(frzfrac(i,j) > 0..and. tabs < 273.) then
          prcpculiq = max(0.,(rainbl(i,j)-rainncv(i,j))*(1.-frzfrac(i,j)))
@@ -717,12 +712,7 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
 !          endif
         end do
 
-!27jul2011 - cn and sat are defined in vegparm.tbl
-!        cn=0.5     ! exponent
-!        sat=0.0004   ! canopy water saturated
-
         cw =4.183e6
-
 
 !--- constants used in johansen soil thermal
 !--- conductivity method
@@ -735,13 +725,11 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
 !--- constants for snow density calculations c1sn and c2sn
 
         c1sn=0.026
-!        c1sn=0.01
         c2sn=21.
 
 !***********************************************************************
 
-        nroot= 4
-!           ! rooting depth
+        nroot= 4 ! levels in root layer
 
         rhonewsn = 200.
        if(snow(i,j).gt.0. .and. snowh(i,j).gt.0.) then
@@ -763,7 +751,6 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
       if(ktau.eq.1 .and.(i.eq.358.and.j.eq.260)) &
          print *,'after soilvegin - z0,znt(375,254),lai(375,254)',z0(i,j),znt(i,j),lai(i,j)
 
-!      if(ktau.eq.1 .and. (i.eq.358.and.j.eq.260)) then
        if (globalcells(i) == targetcell) then
          print *,'nlcat,iland,lufrac,emissl(i,j),pc(i,j),znt(i,j),lai(i,j)', &
                   nlcat,iland,lufrac,emissl(i,j),pc(i,j),znt(i,j),lai(i,j),i,j
@@ -773,12 +760,9 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
     endif
 
         cn=cfactr_data   ! exponent
-!        sat=max(1.e-5,(min(5.e-4,(cmcmax_data * (1.-exp(-0.5*lai(i,j))) * 0.01*vegfra(i,j))))) ! canopy water saturated
         sat = 5.e-4  ! units [m]
-!  if(i==666.and.j==282)  print *,'second 666,282 - sat',sat
 
 !-- definition of number of soil levels in the rooting zone
-!     if(iforest(ivgtyp(i,j)).ne.1) then
      if(iforest.gt.2) then
 !---- all vegetation types except evergreen and mixed forests
 !18apr08 - define meltfactor for egglston melting limit:
@@ -799,7 +783,7 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
 !         meltfactor = 1.5
 ! 28 march 11 - previously used value of metfactor= 1.5 needs to be further reduced
 ! to compensate for low snow albedos in the forested areas.
-! melting rate in forests will reduce.
+! Melting rate in forests will reduce.
          meltfactor = 0.85
 
          do k=2,nzs
@@ -817,13 +801,7 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
                    znt(i,j),lai(i,j),vegfra(i,j),sat,emissl(i,j),pc(i,j)
          print *,' zs, zsmain, zshalf, conflx, cn, sat, --->', zs,zsmain,zshalf,conflx,cn,sat
          print *,'nroot, meltfactor, iforest, ivgtyp, i,j ', nroot,meltfactor,iforest,ivgtyp(i,j),i,j
-!         print *,'nroot, iforest, ivgtyp, i,j ', nroot,iforest(ivgtyp(i,j)),ivgtyp(i,j),i,j
     endif
-
-!!*** set zero-value for some output diagnostic arrays
-!    if(i.eq.397.and.j.eq.562) then
-!        print *,'ruc lsm - xland(i,j),xice(i,j),snow(i,j)',i,j,xland(i,j),xice(i,j),snow(i,j)
-!    endif
 
 #if (em_core==1)
      if(lakemodel==1. .and. lakemask(i,j)==1.) goto 2999
@@ -863,7 +841,6 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
 
 ! land point or sea ice
        if(xice(i,j).ge.xice_threshold) then
-!       if(ivgtyp(i,j).eq.isice) then
            seaice(i,j)=1.
        else
            seaice(i,j)=0.
@@ -906,7 +883,6 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
            do k=1,nzs
 ! soilm1d - soil moisture content minus residual [m**3/m**3]
               soilm1d (k) = min(max(0.,soilmois(i,k,j)-qmin),dqm)
-!              soilm1d (k) = min(max(0.,soilmois(i,k,j)),dqm)
               tso1d   (k) = tso(i,k,j)
               soiliqw (k) = min(max(0.,sh2o(i,k,j)-qmin),soilm1d(k))
               soilice (k) =(soilm1d (k) - soiliqw (k))/0.9
@@ -918,16 +894,12 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
            enddo
 
               lmavail(i,j)=max(0.00001,min(1.,soilm1d(1)/(ref-qmin)))
-!              lmavail(i,j)=max(0.00001,min(1.,soilm1d(1)/dqm))
 
 #if ( nmm_core == 1 )
      if(ktau+1.gt.1) then
 #else
      if(ktau.gt.1) then
 #endif
-
-! extract dew from the cloud water at the surface
-!30july13              qcg(i,j)=qcg(i,j)-dew(i,j)/qkms
      endif
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -991,9 +963,9 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
        field_sf_loc(i,:,j) = field_sf_temp
 !-----------------------------------------------------------------
 
-! fraction of cropland category in the grid box should not have soil moisture below
+! Irrigation: fraction of cropland category in the grid box should not have soil moisture below
 ! wilting point during the growing season.
-! let's keep soil moisture 20% above wilting point for the fraction of grid box under
+! Let's keep soil moisture 10% above wilting point for the fraction of grid box under
 ! croplands.
 ! this change violates lsm moisture budget, but
 ! can be considered as a compensation for irrigation not included into lsm.
@@ -1063,7 +1035,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
         do k=1,nzs
 
-!             soilmois(i,k,j) = soilm1d(k)
              soilmois(i,k,j) = soilm1d(k) + qmin
              sh2o    (i,k,j) = min(soiliqw(k) + qmin,soilmois(i,k,j))
                   tso(i,k,j) = tso1d(k)
@@ -1075,9 +1046,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
              smfr3d(i,k,j) = smfrkeep(k)
            keepfr3dflag(i,k,j) = keepfr (k)
         enddo
-
-!tgs add together dew and cloud at the ground surface
-!30july13        qcg(i,j)=qcg(i,j)+dew(i,j)/qkms
 
         z0       (i,j) = znt (i,j)
         sfcexc   (i,j) = tkms
@@ -1110,7 +1078,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
            print *,' land, i=,j=, qfx, hfx after sfctmp', i,j,lh(i,j),hfx(i,j)
         endif
-!!!        qfx    (i,j) = lh(i,j)/lv
         sfcevp (i,j) = sfcevp (i,j) + qfx (i,j) * dt
         grdflx (i,j) = -1. * sflx(i,j)
 
@@ -1118,7 +1085,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !tgs - smf.ne.0. when there is phase change in the top soil layer
 ! the heat of soil water freezing/thawing is not computed explicitly
 ! and is responsible for the residual in the energy budget.
-!  print *,'budget',budget(i,j),i,j,smf(i,j)
+!        print *,'budget',budget(i,j),i,j,smf(i,j)
 !       endif
 
 !--- snowc snow cover flag
@@ -1133,11 +1100,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
 ! accumulated moisture flux [kg/m^2]
        sfcevp (i,j) = sfcevp (i,j) + qfx (i,j) * dt
-
-!test!!!! for test put heat budget term in grdflx
-
-!       acbudget(i,j)=acbudget(i,j)+budget(i,j)-smf(i,j)
-!       grdflx (i,j) = acbudget(i,j)
 
 !       if(smf(i,j) .ne.0.) then
 !tgs - smf.ne.0. when there is phase change in the top soil layer
@@ -1162,11 +1124,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                       -ac-as - (smavail(i,j)-smtotold(i,j))
 
 
-!       waterbudget(i,j)=rainbl(i,j)-qfx(i,j)*dt-(smavail(i,j)-smtotold(i,j)) &
        acwaterbudget(i,j)=acwaterbudget(i,j)+waterbudget(i,j)
-
-!!!!test use  lh to check water budget
-!          grdflx (i,j) = waterbudget(i,j)
 
         if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
             print *,'smf=',smf(i,j),i,j
@@ -1441,12 +1399,12 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
      !-- snow fraction options
      !-- option 1: original formulation using critical snow depth to compute
      !-- snow fraction
-     !-- option 2: the tanh formulation from niu,g.-y.,and yang,z.-l.
-     !2007,jgr,doi:10.1029/2007jd008674.
-     !-- option 3: the tanh formulation from niu,g.-y.,and yang,z.-l.
-     !2007,jgr,doi:10.1029/2007jd008674.
-     !             with vegetation dependent parameters from noah mp (personal
-     !             communication with mike barlage)
+     !-- option 2: the tanh formulation from Niu,G.-Y.,and Yang,Z.-L.
+     !2007,JGR,doi:10.1029/2007jd008674.
+     !-- option 3: the tanh formulation from Niu,G.-Y.,and Yang,Z.-L.
+     !2007,JGR,doi:10.1029/2007jd008674.
+     !   with vegetation dependent parameters from noah mp (personal
+     !   communication with mike barlage)
      !-- snhei_crit is a threshold for fractional snow in isncovr_opt=1
          snhei_crit=0.01601*rhowater/rhosn
          snhei_crit_newsn=0.0005*rhowater/rhosn
@@ -1465,7 +1423,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         rsm=0.
         dd1=0.
         infiltr=0.
-! jul 2016 -  avissar and pielke (1989)
+! jul 2016 -  Avissar and Pielke (1989)
 ! this formulation depending on lai defines relative contribution of the vegetation to
 ! the total heat fluxes between surface and atmosphere.
 ! with vegfra=100% and lai=3, vegfrac=0.86 meaning that vegetation contributes
@@ -1498,7 +1456,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         emiss_snowfree = lemitbl(ivgtyp)
 
 !--- sea ice properties
-!--- n.n zubov "arctic ice"
+!--- N.N Zubov "Arctic Ice"
 !--- no salinity dependence because we consider the ice pack
 !--- to be old and to have low salinity (0.0002)
        if(seaice.ge.0.5) then
@@ -1518,14 +1476,13 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
        endif
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!        print *,'i,j,ktau,qkms,tkms', i,j,ktau,qkms,tkms
         print *,'alb_snow_free',alb_snow_free
         print *,'gsw,gswnew,glw,soilt,emiss,alb,albice,snwe',&
                  gsw,gswnew,glw,soilt,emiss,alb,albice,snwe
     endif
 
 	if(snhei.gt.0.0081*1.e3/rhosn) then
-!*** update snow density for current temperature (koren et al. 1999)
+!*** update snow density for current temperature (Koren et al. 1999)
         bsn=delt/3600.*c1sn*exp(0.08*min(0.,tsnav)-c2sn*rhosn*1.e-3)
        if(bsn*snwe*100..lt.1.e-4) goto 777
         xsn=rhosn*(exp(bsn*snwe*100.)-1.)/(bsn*snwe*100.)
@@ -1548,7 +1505,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
         newsnowratio = min(1.,newsn/(snwe+newsn))
 
-!--- 27 feb 2014 - empirical formulations from john m. brown
+!--- 27 feb 2014 - empirical formulations from John M. Brown
 !        rhonewsn=min(250.,rhowater/max(4.179,(13.*tanh((274.15-tabs)*0.3333))))
 !--- 13 mar 2018 - formulation from trevor alcott
         rhonewsn=min(125.,1000.0/max(8.,(17.*tanh((276.65-tabs)*0.15))))
@@ -1587,8 +1544,8 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         drip = 0.
         intwratio=0.
      if(vegfrac > 0.01) then
-! compute intercepted precipitation - eq. 1 lawrence et al.,
-! j. of hydrometeorology, 2006, clm.
+! compute intercepted precipitation - eq. 1 Lawrence et al.,
+! j. of hydrometeorology, 2006, CLM.
          interw=0.25*delt*prcpms*(1.-exp(-0.5*lai))*vegfrac
          intersn=0.25*newsn*(1.-exp(-0.5*lai))*vegfrac
          infwater=prcpms - interw/delt
@@ -1612,7 +1569,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
      endif ! vegfrac > 0.01
 
        if(newsn.gt.0.) then
-!update snow on the ground
+! update snow on the ground
          snwe=max(0.,snwe+newsn-intersn)
 ! add drip to snow on the ground
       if(drip > 0.) then
@@ -1665,8 +1622,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
       else
       !-- isncovr_opt=3
         !m = msnf ! vegetation dependent facsnf/msnf from noah mp
-        !-- for rrfs a factor 10. was added to 'facsnf' to get reasonal values
-        !of
+        !-- for RRFS a factor 10. was added to 'facsnf' to get reasonal values of
         !   snow cover fractions on the 3-km scale.
         !   this factor is scale dependent.
         snowfrac = tanh( snhei/(0.2 *(rhosn/rhonewsn)**1.))
@@ -1688,16 +1644,13 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !         snowfrac=min(0.85,snowfrac)
 !      endif
 
-!         snowfrac=min(1.,snhei/(2.*snhei_crit))
-!       elseif(snowfrac < 0.3 .and. tabs > 275.) then
-
        if(snowfrac < 0.75) snow_mosaic = 1.
 
          keep_snow_albedo = 0.
        if (snowfracnewsn > 0.99 .and. rhosnfall < 450.) then
 ! new snow
              keep_snow_albedo = 1.
-             snow_mosaic=0.  ! ???
+             snow_mosaic = 0.
       endif
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -1707,8 +1660,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
 !-- set znt for snow from vegparm table (snow/ice landuse), except for
 !-- land-use types with higher roughness (forests, urban).
-!5mar12      if(znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
-!      if(newsn==0. .and. znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
       if(newsn.eq.0. .and. znt.le.0.2 .and. ivgtyp.ne.isice) then
          if( snhei .le. 2.*znt)then
            znt=0.55*znt+0.45*z0tbl(iland)
@@ -1719,11 +1670,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          endif
        endif
 
-
-!---  gswnew in-coming solar for snow on land or on ice
-!         gswnew=gswnew/(1.-alb)
-!-- time to update snow and ice albedo
-
     if(seaice .lt. 0.5) then
 !----- snow on soil
 !-- alb dependence on snow depth
@@ -1732,7 +1678,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 ! hwlps with these biases..
      if( snow_mosaic == 1.) then
          albsn=alb_snow
-!        albsn=max(0.4,alb_snow)
          emiss= emissn
      else
          albsn   = max(keep_snow_albedo*alb_snow,               &
@@ -1744,13 +1689,11 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
            (emissn - emiss_snowfree) * snowfrac), emissn))
      endif
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!     if(i.eq.279.and.j.eq.263) then
   print *,'snow on soil albsn,emiss,snow_mosaic',i,j,albsn,emiss,snow_mosaic
     endif
 !28mar11  if canopy is covered with snow to 95% of its capacity and snow depth is
 ! higher than patchy snow treshold - then snow albedo is not less than 0.55
 ! (inspired by the flight from fairbanks to seatle)
-
 !test      if(cst.ge.0.95*sat .and. snowfrac .gt.0.99)then
 !        albsn=max(alb_snow,0.55)
 !      endif
@@ -1762,7 +1705,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !-- albedo of temperatures below -10c.
      if(albsn.lt.0.4 .or. keep_snow_albedo==1) then
         alb=albsn
-!        alb=max(0.4,alb_snow)
       else
 !-- change albedo when no fresh snow and snow albedo is higher than 0.5
         alb = min(albsn,max(albsn - 0.1*(soilt - 263.15)/       &
@@ -1812,7 +1754,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          xinet   = emiss_snowfree*(glw-upflux)
          rnet    = gswnew + xinet
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!     if(i.eq.442.and.j.eq.260) then
      print *,'fractional snow - snowfrac=',snowfrac
      print *,'snowfrac<1 gswin,gswnew -',gswin,gswnew,'soilt, rnet',soilt,rnet
     endif
@@ -1866,7 +1807,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          xinet   = emiss_snowfree*(glw-upflux)
          rnet    = gswnew + xinet
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!     if(i.eq.442.and.j.eq.260) then
      print *,'fractional snow - snowfrac=',snowfrac
      print *,'snowfrac<1 gswin,gswnew -',gswin,gswnew,'soilt, rnet',soilt,rnet
     endif
@@ -2017,7 +1957,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         if(seaice .lt. 0.5) then
 ! land
    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!   if(i.eq.442.and.j.eq.260) then
       print *,'soilt snow on land', ktau, i,j,soilt
       print *,'soilt on snow-free land', i,j,soilts
       print *,'ts1d,ts1ds',i,j,ts1d,ts1ds
@@ -2063,12 +2002,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                   min((emiss_snowfree +                  &
               (emissn - emiss_snowfree) * snowfrac), emissn))
 
-!          alb=alb_snow_free*(1.-snowfrac) + alb*snowfrac
-!          emiss=emiss_snowfree*(1.-snowfrac) + emissn*snowfrac
-
-!   if(abs(fltot) > 2.) then
-!    print *,'i,j,fltot,snowfrac,fltots',fltot,snowfrac,fltots,i,j
-!  endif
           runoff1 = runoff1s*(1.-snowfrac) + runoff1*snowfrac
           runoff2 = runoff2s*(1.-snowfrac) + runoff2*snowfrac
           mavail = mavails*(1.-snowfrac) + 1.*snowfrac
@@ -2108,8 +2041,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                   min((emiss_snowfree +                  &
               (emissn - emiss_snowfree) * snowfrac), emissn))
 
-!          alb=alb_snow_free*(1.-snowfrac) + alb*snowfrac
-!          emiss=1.*(1.-snowfrac) + emissn*snowfrac
           runoff1 = runoff1s*(1.-snowfrac) + runoff1*snowfrac
           runoff2 = runoff2s*(1.-snowfrac) + runoff2*snowfrac
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -2474,13 +2405,11 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !-----------------------------------------------------------------
 
 !-- define constants
-!        stbolt=5.670151e-8
         rhoice=900.
         ci=rhoice*2100.
         xlmelt=3.35e+5
         cvw=cw
 
-!        sat=0.0004
         prcpl=prcpms
 
         smf=0.
@@ -2664,7 +2593,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
            smold(k)=soilmois(k)
           enddo
 
-! sakaguchi and zeng (2009) - dry soil resistance to evaporation
+! Sakaguchi and Zeng (2009) - dry soil resistance to evaporation
 !      if (vgtype==11) then   ! modis wetland
 !        alfa=1.
 !      else
@@ -2800,7 +2729,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
           t3      = stbolt*soiltold*soiltold*soiltold
           upflux  = t3 * 0.5*(soiltold+soilt)
           xinet   = emiss*(glw-upflux)
-!          rnet    = gsw + xinet
           hft=-tkms*cp*rho*(tabs-soilt)
           hfx=-tkms*cp*rho*(tabs-soilt)                        &
                *(p1000mb*0.00001/patm)**rovcp
@@ -2817,7 +2745,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
           eeta=-qkms*ras*(qvatm/(1.+qvatm) - qsg/(1.+qsg))*1.e3
           cst= cst-eeta*delt*vegfrac
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!!!    if(i.eq.374.and.j.eq.310.or. eeta.gt.0.0004) then
         print *,'cond myj eeta',eeta,eeta*xlv, i,j
     endif
      else ! myj
@@ -2825,8 +2752,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
           eeta= - rho*dew
           cst=cst+delt*dew*ras * vegfrac
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if(i.eq.374.and.j.eq.310.or. eeta.gt.0.0004) then
-!    if(i.eq.440.and.j.eq.180.or. qfx.gt.1000..or.i.eq.417.and.j.eq.540) then
        print *,'cond ruc lsm eeta',eeta,eeta*xlv, i,j
     endif
      endif ! myj
@@ -2839,7 +2764,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
           cmc2ms=cst/delt*ras
           ec1 = q1 * wetcan * vegfrac
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!     if(i.eq.440.and.j.eq.180.or. qfx.gt.1000..or.i.eq.417.and.j.eq.540) then
        print *,'cst before update=',cst
        print *,'ec1=',ec1,'cmc2ms=',cmc2ms
      endif
@@ -2847,29 +2771,20 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
           cst=max(0.,cst-ec1 * delt)
 
-!      if (ec1 > cmc2ms) then
-!          ec1 = min(cmc2ms,ec1)
-!          cst = 0.
-!      endif
-
      if (myj) then
 !-- moisture flux for coupling with myj pbl
           eeta=-soilres*qkms*ras*(qvatm/(1.+qvatm) - qvg/(1.+qvg))*1.e3
      else ! myj
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if(i.eq.440.and.j.eq.180.or. qfx.gt.1000..or.i.eq.417.and.j.eq.540) then
        print *,'qkms,ras,qvatm/(1.+qvatm),qvg/(1.+qvg),qsg ', &
                 qkms,ras,qvatm/(1.+qvatm),qvg/(1.+qvg),qsg
        print *,'q1*(1.-vegfrac),edir1',q1*(1.-vegfrac),edir1
        print *,'cst,wetcan,drycan',cst,wetcan,drycan
        print *,'ec1=',ec1,'ett1=',ett1,'cmc2ms=',cmc2ms,'cmc2ms*ras=',cmc2ms*ras
-!       print *,'myj eeta',eeta,eeta*xlv
     endif
 !-- actual moisture flux from ruc lsm
           eeta = (edir1 + ec1 + ett1)*1.e3
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if(i.eq.374.and.j.eq.310.or. eeta.gt.0.0004) then
-!    if(i.eq.440.and.j.eq.180 .or. qfx.gt.1000..or.i.eq.417.and.j.eq.540) then
         print *,'ruc lsm eeta',eeta,eeta*xlv
     endif
      endif ! myj
@@ -2886,7 +2801,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 ! energy budget
           fltot=rnet-hft-xlv*eeta-s-x
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if(i.eq.440.and.j.eq.180 .or. qfx.gt.1000..or.i.eq.417.and.j.eq.540) then
        print *,'soil - fltot,rnet,hft,qfx,s,x=',i,j,fltot,rnet,hft,xlv*eeta,s,x
        print *,'edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,vegfrac',&
                 edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,vegfrac
@@ -3018,7 +2932,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !-----------------------------------------------------------------
 
 !-- define constants
-!        stbolt=5.670151e-8
         xlmelt=3.35e+5
         cvw=cw
 
@@ -3109,7 +3022,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
           t3      = stbolt*tn*tn*tn
           upflux  = t3 *0.5*(tn+soilt)
           xinet   = emiss*(glw-upflux)
-!          rnet    = gsw + xinet
           hft=-tkms*cp*rho*(tabs-soilt)
           hfx=-tkms*cp*rho*(tabs-soilt)                        &
                *(p1000mb*0.00001/patm)**rovcp
@@ -3430,7 +3342,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         xlmelt=3.35e+5
 !-- heat of water vapor sublimation
         xlvm=xlv+xlmelt
-!        stbolt=5.670151e-8
 
 !--- snow flag -- isice
 !         iland=isice
@@ -3449,17 +3360,9 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
        x=0.
 
-! increase thinkness of top snow layer from 3 cm swe to 5 cm swe
-!           deltsn=5.*snhei_crit
-!           snth=0.4*snhei_crit
-
            deltsn=0.05*1.e3/rhosn
            snth=0.01*1.e3/rhosn
-!           snth=0.01601*1.e3/rhosn
-
-!   if(i.eq.442.and.j.eq.260) then
 !      print *,'deltsn,snhei,snth',i,j,deltsn,snhei,snth
-!    endif
 
 ! for 2-layer snow model when the snow depth is marginally higher than deltsn,
 ! reset deltsn to half of snow depth.
@@ -3474,7 +3377,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         ci=rhoice*2100.
         ras=rho*1.e-3
         riw=rhoice*1.e-3
-!        mavail=1.
         rsm=0.
 
         do k=1,nzs
@@ -3598,7 +3500,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !********************************************************************
 !--- calculation of canopy water (smirnova et al., 1996, eq.16) and dew
 
-!        drip=0.
         smelt=0.
         h=mavail
 
@@ -3686,7 +3587,6 @@ print *, 'tso before calling snowtemp: ', tso
           do k=1,nroot
             transp(k)=vegfrac*ras*fq*(qvatm-qsg)              &
                      *tranf(k)*drycan/zshalf(nroot+1)
-!           if(transp(k).gt.0.) transp(k)=0.
             ett1=ett1-transp(k)
           enddo
           do k=nroot+1,nzs
@@ -3776,7 +3676,6 @@ print *, 'tso before calling snowtemp: ', tso
         t3      = stbolt*soiltold*soiltold*soiltold
         upflux  = t3 *0.5*(soiltold+soilt)
         xinet   = emiss*(glw-upflux)
-!        rnet    = gsw + xinet
         hfx=-tkms*cp*rho*(tabs-soilt)                        &
                *(p1000mb*0.00001/patm)**rovcp
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -3820,11 +3719,6 @@ print *, 'tso before calling snowtemp: ', tso
 
         cst=max(0.,cst-ec1 * delt)
 
-!     if(ec1 > cmc2ms) then
-!        ec1 = min(cmc2ms,ec1)
-!        cst = 0.
-!     endif
-
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
      print*,'q1,umveg,beta',q1,umveg,beta
      print *,'wetcan,vegfrac',wetcan,vegfrac
@@ -3849,7 +3743,6 @@ print *, 'tso before calling snowtemp: ', tso
         eeta = (edir1 + ec1 + ett1)*1.e3
        endif
         s=snflx
-!        sublim=eeta
         sublim=edir1*1.e3
 ! energy budget
         fltot=rnet-hft-xlvm*eeta-s-snoh-x
@@ -4014,7 +3907,6 @@ print *, 'tso before calling snowtemp: ', tso
         xlmelt=3.35e+5
 !-- heat of sublimation of water vapor
         xlvm=xlv+xlmelt
-!        stbolt=5.670151e-8
 
 !--- snow flag -- isice
 !         iland=isice
@@ -4027,13 +3919,8 @@ print *, 'tso before calling snowtemp: ', tso
 !--- the top sea ice layer. snth is computed using snwe=0.016 m, and
 !--- equals 4 cm for snow density 400 kg/m^3.
 
-! increase thickness of top snow layer from 3 cm swe to 5 cm swe
-!           deltsn=5.*snhei_crit
-!           snth=0.4*snhei_crit
-
            deltsn=0.05*1.e3/rhosn
            snth=0.01*1.e3/rhosn
-!           snth=0.01601*1.e3/rhosn
 
 ! for 2-layer snow model when the snow depth is marginlly higher than deltsn,
 ! reset deltsn to half of snow depth.
@@ -4343,19 +4230,16 @@ print *, 'tso before calling snowtemp: ', tso
       if(nmelt.eq.1) go to 220
 
 !--- if soilt > 273.15 f then melting of snow can happen
-!   if(soilt.gt.273.15.and.snwe.gt.0.) then
 ! if all snow can evaporate, then there is nothing to melt
    if(soilt.gt.273.15.and.snwepr-beta*epot*ras*delt.gt.0..and.snhei.gt.0.) then
 !
         nmelt = 1
-!        soiltfrac=273.15
         soiltfrac=snowfrac*273.15+(1.-snowfrac)*min(271.4,soilt)
 
         qsg= qsn(soiltfrac,tbq)/pp
         t3      = stbolt*tnold*tnold*tnold
         upflux  = t3 * 0.5*(tnold+soiltfrac)
         xinet   = emiss*(glw-upflux)
-!        rnet = gsw + xinet
          epot = -qkms*(qvatm-qsg)
          q1=epot*ras
 
@@ -4449,9 +4333,7 @@ print *, 'tso before calling snowtemp: ', tso
 !-- for evaporation and snow melt
         snwe = amax1(0.,(snwepr-                                      &
                     (smelt+beta*epot*ras)*delt                        &
-!                    (smelt+beta*epot*ras)*delt*snowfrac               &
                                          ) )
-!!!!
         soilt=soiltfrac
 !--- if there is no snow melting then just evaporation
 !--- or condensation changes snwe
@@ -4460,7 +4342,6 @@ print *, 'tso before calling snowtemp: ', tso
                epot=-qkms*(qvatm-qsg)
                snwe = amax1(0.,(snwepr-                               &
                     beta*epot*ras*delt))
-!                    beta*epot*ras*delt*snowfrac))
        endif
 
       endif
@@ -4485,7 +4366,6 @@ print *, 'tso before calling snowtemp: ', tso
          xsn=(rhosn*(snwe-rsm)+1.e3*rsm)/                            &
              snwe
          rhosn=min(max(58.8,xsn),500.)
-!13mar18         rhosn=min(max(76.9,xsn),500.)
 
         rhocsn=2090.* rhosn
         thdifsn = 0.265/rhocsn
@@ -4863,7 +4743,6 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
         q1=tx2+h*qs1
 !        q1=alfa*qs1
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
         print *,'vilka1 - ts1,qs1,tq2,h,tx2,q1',ts1,qs1,tq2,h,tx2,q1
     endif
 !with alfa        go to 100
@@ -4875,7 +4754,6 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
         tso(1)=ts1
         qcg=max(0.,q1-qs1)
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
         print *,'90 qvg,qsg,qcg,tso(1)',qvg,qsg,qcg,tso(1)
     endif
         goto 200
@@ -4884,8 +4762,6 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
         call vilka(tn,aa,bb,pp,qs1,ts1,tbq,ktau,i,j,iland,isoil)
         q1=tx2+h*qs1
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!     if(i.eq.279.and.j.eq.263) then
-!    if (i==421.and.j==280) then
         print *,'vilka2 - ts1,qs1,tq2,h,tx2,q1',ts1,qs1,tq2,h,tx2,q1
     endif
         if(q1.ge.qs1) goto 90
@@ -4900,7 +4776,6 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
         tso(1)=ts1
         qcg=0.
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
        print *,'q1,qsg,qvg,qvatm,alfa,h',q1,qsg,qvg,qvatm,alfa,h
     endif
   200   continue
@@ -5158,7 +5033,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         !-- old version thdifsn = 0.265/rhocsn
           thdifsn = 0.265/rhocsn
         else
-        !-- 07jun19 - thermal conductivity (k_eff) from sturm et al.(1997)
+        !-- 07jun19 - thermal conductivity (k_eff) from Sturm et al.(1997)
         !-- keff = 10. ** (2.650 * rhosn*1.e-3 - 1.652)
            fact = 1.
            if(rhosn < 156. .or. (newsnow > 0. .and. rhonewsn < 156.)) then
@@ -5191,7 +5066,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         rsmfrac = 0.
         fsn=1.
         fso=0.
-!        hsn=snhei
 
           nzs1=nzs-1
           nzs2=nzs-2
@@ -5280,7 +5154,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         endif
        endif
        if(snhei.lt.snth.and.snhei.gt.0.) then
-!       if(snhei.lt.snth.and.snhei.ge.0.) then
 !--- snow is too thin to be treated separately, therefore it
 !--- is combined with the first soil layer.
          snprim=snhei+zsmain(2)
@@ -5478,7 +5351,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
          tso(1)=soilt
          soilt1=soilt
          tsob=tso(1)
-!new         tsob=tso(2)
        endif
        if(nmelt==1.and.snowfrac==1.) then
        !-- second iteration with full snow cover
@@ -5513,7 +5385,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
 
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if(i.eq.266.and.j.eq.447) then
    print *,'soilt,soilt1,tso,tsob,qsg',i,j,soilt,soilt1,tso,tsob,qsg,'nmelt=',nmelt
     endif
 
@@ -5547,7 +5418,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
           do k=1,nroot
             transp(k)=-vegfrac*q1                                     &
                       *tranf(k)*drycan/zshalf(nroot+1)
-!           if(transp(k).gt.0.) transp(k)=0.
             ett1=ett1-transp(k)
           enddo
           do k=nroot+1,nzs
@@ -5557,7 +5427,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         edir1 = q1*umveg * beta
         ec1 = q1 * wetcan * vegfrac
         cmc2ms=cst/delt*ras
-!        ec1=min(cmc2ms,ec1)
         eeta = (edir1 + ec1 + ett1)*1.e3
 ! to convert from kg m-2 s-1 to m s-1: 1/rho water=1.e-3************
         qfx=  xlvm * eeta
@@ -5606,9 +5475,8 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
 
         smelt=amax1(0.,smelt)
 
-!18apr08 - egglston limit
-      !-- 22apr22 do not limit snow melting for hail (rhonewsn > 450), or dense
-      !snow
+!18apr08 - Egglston limit
+      !-- 22apr22 do not limit snow melting for hail (rhonewsn > 450), or dense snow
       !-- (rhosn > 350.) with very warm surface temperatures (>10c)
       if( (rhosn < 350. .or. (newsnow > 0. .and. rhonewsn < 450.)) .and. soilt < 283. ) then
 !        smelt= amin1 (smelt, 5.6e-7*meltfactor*max(1.,(soilt-273.15)))
@@ -5639,7 +5507,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
     endif
 
       if( smelt > 0.) then
-!*** from koren et al. (1999) 13% of snow melt stays in the snow pack
+!*** from Koren et al. (1999) 13% of snow melt stays in the snow pack
         rsmfrac=min(0.18,(max(0.08,snwepr/0.10*0.13)))
        if(snhei > 0.01 .and. rhosn < 350.) then
         rsm=rsmfrac*smelt*delt
@@ -5673,15 +5541,13 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
                epot=-qkms*(qvatm-qsg)
                snwe = amax1(0.,(snwepr-                               &
                     beta*epot*ras*delt))
-!                    beta*epot*ras*delt*snowfrac))
        else
        !-- all snow is sublibated
          snwe = 0.
        endif
 
       endif
-!18apr08 - if snow melt occurred then go into iteration for energy budget 
-!         solution 
+!18apr08 - if snow melt occurred then go into iteration for energy budget solution 
      if(nmelt.eq.1) goto 212  ! second interation
  220  continue
 
@@ -5699,7 +5565,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
           xsn=(rhosn*(snwe-rsm)+1.e3*rsm)/                            &
               snwe
           rhosn=min(max(58.8,xsn),500.)
-!13mar18          rhosn=min(max(76.9,xsn),500.)
 
          rhocsn=2090.* rhosn
         if(isncond_opt == 1) then
@@ -5783,11 +5648,9 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         snohgnew=smeltg*xlmelt*1.e3
         snodif=amax1(0.,(snohg-snohgnew))
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!   if(i.eq.266.and.j.eq.447) then
        print *,'tso(1),soiltfrac,smeltg,snodif',tso(1),soiltfrac,smeltg,snodif
     endif
 
-!        snwe=max(0.,snwe-smeltg*delt*snowfrac)
         snwe=max(0.,snwe-smeltg*delt)
         snhei=snwe *1.e3 / rhosn
         !-- add up all snow melt
@@ -5795,7 +5658,6 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
       
         if(snhei > 0.) tso(1) = soiltfrac
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!   if(i.eq.266.and.j.eq.447) then
        print *,'melt from the bottom snwe,snhei',snwe,snhei
        if (snhei==0.) &
        print *,'snow is all melted on the warm ground'
@@ -5988,20 +5850,10 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
 ! so far - no interaction with the water table.
 
         denom=1.+diffu(nzs1)/x1/did*delt
-!orig        denom=(1.+diffu(nzs1)/x1/did*delt+hydro(nzs)/did*delt)
-!orig        cosmc(1)=delt*(diffu(nzs1)/did/x1                                &
-!orig                    +hydro(nzs1)/2./did)/denom
         cosmc(1)=delt*(diffu(nzs1)/did/x1                                &
                     +hydro(nzs1)/did)/denom
-
-!        rhsmc(1)=(soilmois(nzs)+transp(nzs)*delt/                        &
-!               did)/denom
-
         rhsmc(1)=(soilmois(nzs)-hydro(nzs)*delt/did*soilmois(nzs) &
                  +transp(nzs)*delt/did)/denom
-!test        rhsmc(1)=soilmois(nzs)-hydro(nzs)*soilmois(nzs)
-!test!!!
-!this test gave smoother soil moisture, ovwerall better results
         cosmc(1)=0.
         rhsmc(1)=soilmois(nzs)
 !
@@ -6057,9 +5909,6 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
 print *,'umveg*prcp,drip/delt,umveg*dew*ras,smelt', &
          umveg*prcp,drip/delt,umveg*dew*ras,smelt
     endif
-
-!test 16 may        totliq=umveg*prcp-drip/delt-umveg*dew*ras-smelt
-!30july13        totliq=umveg*prcp-drip/delt-smelt
 
         flx=totliq
         infiltrp=totliq
@@ -6214,12 +6063,8 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
    print *,'hydro(k),qq,dqm,k',hydro(k),qq,dqm,k
     endif
                runoff2=runoff2+((qq-dqm)*(zsmain(k)-zshalf(k)))/delt
-!              runoff2=runoff2+(qq-dqm)*hydro(k)
-!   print *,'runoff2=',runoff2
              else
-!   print *,'qq,dqm,k',qq,dqm,k
                runoff2=runoff2+((qq-dqm)*(zshalf(k+1)-zshalf(k)))/delt
-!              runoff2=runoff2+(qq-dqm)*hydro(k)
              endif
            else
             soilmois(k)=min(dqm,max(1.e-8,qq))
@@ -6230,9 +6075,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
    print *,'end soilmois',soilmois
     endif
 
-!           runoff2=runoff2+hydro(nzs)*soilmois(nzs)
-!           mavail=max(.00001,min(1.,soilmois(1)/dqm))
-!           mavail=max(.00001,min(1.,soilmois(1)/(ref-qmin)))
            mavail=max(.00001,min(1.,(soilmois(1)/(ref-qmin)*(1.-snowfrac)+1.*snowfrac)))
 
 !        return
@@ -6423,10 +6265,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
         ! if(globalid == targetcell) print*, 'k,diffu(k),ksat,ame,dqm,h,bclh,facd', k, diffu(k),ksat, ame, dqm,h, bclh, facd
          endif
 
-!          diffu(k)=-bclh*ksat*psis/dqm                              &
-!                 *h**(bclh+2.)
-
-
 !--- thdif - thermal diffusivity
 !           thdif(k)=hk(k)/cap(k)
 !--- use thermal conductivity from johansen (1975)
@@ -6587,19 +6425,17 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !        pctot=min(0.8,max(pc,pc*lai))
       endif
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
      print *,'i,j,pctot,lai,pc',i,j,pctot,lai,pc
     endif
 !---
 !--- air temperature function
-!     avissar (1985) and ax 7/95
+!     Avissar (1985) and Ax 7/95
         if (tabs .le. 302.15) then
           ftem = 1.0 / (1.0 + exp(-0.41 * (tabs - 282.05)))
         else
           ftem = 1.0 / (1.0 + exp(0.5 * (tabs - 314.0)))
         endif
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
      print *,'i,j,tabs,ftem',i,j,tabs,ftem
     endif
 !--- incoming solar function
@@ -6618,21 +6454,19 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !       fsol=cmin/cmax
 !    endif
 !     totcnd = max(lai/rstbl(iland), pctot * ftem * f1)
-! mahrer & avissar (1982), avissar et al. (1985)
+! Mahrer & Avissar (1982), Avissar et al. (1985)
      if (gswin < rgltbl(iland)) then
       fsol = 1. / (1. + exp(-0.034 * (gswin - 3.5)))
      else
       fsol = 1.
      endif
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
      print *,'i,j,gswin,lai,f1,fsol',i,j,gswin,lai,f1,fsol
     endif
 !--- total conductance
      totcnd =(cmin + (cmax - cmin)*pctot*ftem*fsol)/cmax
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
      print *,'i,j,iland,rgltbl(iland),rstbl(iland),rsmax_data,totcnd'  &
              ,i,j,iland,rgltbl(iland),rstbl(iland),rsmax_data,totcnd
     endif
@@ -6645,7 +6479,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
          transum=transum+tranf(k)
         end do
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-!    if (i==421.and.j==280) then
       print *,'i,j,transum,tranf',i,j,transum,tranf
     endif
 
@@ -6959,11 +6792,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
                                                            wilt
    integer, intent (  out)   ::                         iforest
 
-!   integer, dimension( 1:(lucats) )                          , &
-!            intent (  out)            ::                iforest
-
-
-!   integer, dimension( 1:50 )   ::   if1
    integer   ::   kstart, kfin, lstart, lfin
    integer   ::   k
    real      ::   area,  factor, znt1, lb
@@ -7020,7 +6848,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
          endif
        else
         laitoday(k) = laitbl(k)
-!        znttoday(k) = z0tbl(k)
         znttoday(k) = znt ! do not overwrite z0 over water with the table value
        endif
       enddo
@@ -7039,9 +6866,8 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
         if(.not.rdlai2d) lai = 0.
         area  = 0.
 !-- mosaic approach to landuse in the grid box
-! use  mason (1988) eq.(15) to compute effective znt;
-!  lb - blending height =  l/200., where l is the length scale
-! of regions with varying z0 (lb = 5 if l=1000 m)
+!  use  Mason (1988) eq.(15) to compute effective znt;
+!  lb - blending height =  l/200., where l is the length scale of regions with varying z0 (lb = 5 if l=1000 m)
         lb = 5.
       if(mosaic_lu == 1) then
       do k = 1,nlcat
@@ -7157,17 +6983,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
       endif
         endif
 
-! parameters from the look-up tables
-!          bclh   = lbcl(isltyp)
-!          dqm    = lqma(isltyp)-                               &
-!                   lqmi(isltyp)
-!          ksat   = lkas(isltyp)
-!          psis   = - lpsi(isltyp)
-!          qmin   = lqmi(isltyp)
-!          ref    = lref(isltyp)
-!          wilt   = lwil(isltyp)
-!          qwrtz  = datqtz(isltyp)
-
 !--------------------------------------------------------------------------
    end subroutine soilvegin
 !--------------------------------------------------------------------------
@@ -7224,10 +7039,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
    integer                   :: errflag
 
-!   itf=min0(ite,ide-1)
-!   jtf=min0(jte,jde-1)
-
-
         riw=900.*1.e-3
         xlmelt=3.35e+5
 
@@ -7241,8 +7052,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
         mminluruc='modi-ruc'
       endif
         mminsl='stas-ruc'
-!     call  ruclsm_parm_init
-!    print *,'ruclsminit uses ',mminluruc
      call ruclsm_soilvegparm( mminluruc, mminsl)
    endif
 
@@ -7280,9 +7089,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
         znt(i,j)   = z0tbl(ivgtyp(i,j))
 
-!     call soilin     ( isltyp(i,j), dqm, ref, psis, qmin, bclh )
-
-
 !--- computation of volumetric content of ice in soil
 !--- and initialize mavail
           dqm    = maxsmc   (isltyp(i,j)) -                               &
@@ -7292,8 +7098,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
           qmin   = drysmc   (isltyp(i,j))
           bclh   = bb       (isltyp(i,j))
 
-
-!!!     if (.not.restart) then
 
     if(xice(i,j).gt.0.) then
 !-- for ice
@@ -7314,7 +7118,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
            soiliqw(l)=(dqm+qmin)*(xlmelt*                        &
          (tslb(i,l,j)-273.15)/tslb(i,l,j)/9.81/psis)             &
           **(-1./bclh)
-!          **(-1./bclh)-qmin
            soiliqw(l)=max(0.,soiliqw(l))
            soiliqw(l)=min(soiliqw(l),smois(i,l,j))
            sh2o(i,l,j)=soiliqw(l)
@@ -7341,24 +7144,10 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
  endif
 
+!-----------------------------------------------------------------
   end subroutine ruclsminit
+!-----------------------------------------------------------------
 !
-!-----------------------------------------------------------------
-!        subroutine ruclsm_parm_init
-!-----------------------------------------------------------------
-
-!        character*9 :: mminlu, mminsl
-
-!        mminlu='modis-ruc'
-!        mminlu='usgs-ruc'
-!        mminsl='stas-ruc'
-!        call ruclsm_soilvegparm( mminlu, mminsl)
-
-!-----------------------------------------------------------------
-!        end subroutine ruclsm_parm_init
-!-----------------------------------------------------------------
-
-!-----------------------------------------------------------------
         subroutine ruclsm_soilvegparm( mminluruc, mminsl)
 !-----------------------------------------------------------------
 
@@ -7370,7 +7159,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
         character*8 :: mminluruc, mminsl
         character*128 :: mess , message, vege_parm_string
-!        logical, external :: wrf_dm_on_monitor
 
 
 !-----specify vegetation related characteristics :
@@ -7398,9 +7186,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !
 !-----read in vegetaion properties from vegparm.tbl
 !
-
-!       if ( wrf_dm_on_monitor() ) then
-
         open(19, file='vegparm.tbl',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
@@ -7517,7 +7302,6 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !
 !-----read in soil properties from soilparm.tbl
 !
-      !if ( wrf_dm_on_monitor() ) then
         open(19, file='soilparm.tbl',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
@@ -7651,81 +7435,5 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
       end subroutine ruclsm_soilvegparm
 !-----------------------------------------------------------------
 #endif
-
-  subroutine soilin (isltyp, dqm, ref, psis, qmin, bclh )
-
-!---    soiltyp classification according to statsgo(nclasses=16)
-!
-!             1          sand                  sand
-!             2          loamy sand            loamy sand
-!             3          sandy loam            sandy loam
-!             4          silt loam             silty loam
-!             5          silt                  silty loam
-!             6          loam                  loam
-!             7          sandy clay loam       sandy clay loam
-!             8          silty clay loam       silty clay loam
-!             9          clay loam             clay loam
-!            10          sandy clay            sandy clay
-!            11          silty clay            silty clay
-!            12          clay                  light clay
-!            13          organic materials     loam
-!            14          water
-!            15          bedrock
-!                        bedrock is reclassified as class 14
-!            16          other (land-ice)
-! extra classes from fei chen
-!            17          playa
-!            18          lava
-!            19          white sand
-!
-!----------------------------------------------------------------------
-         integer,   parameter      ::      nsoilclas=19
-
-         integer, intent ( in)  ::                          isltyp
-         real,    intent ( out) ::               dqm,ref,qmin,psis
-
-         real  lqma(nsoilclas),lref(nsoilclas),lbcl(nsoilclas),       &
-               lpsi(nsoilclas),lqmi(nsoilclas)
-
-!-- lqma rawls et al.[1982]
-!        data lqma /0.417, 0.437, 0.453, 0.501, 0.486, 0.463, 0.398,
-!     &  0.471, 0.464, 0.430, 0.479, 0.475, 0.439, 1.0, 0.20, 0.401/
-!---
-!-- clapp, r. and g. hornberger, empirical equations for some soil
-!   hydraulic properties, water resour. res., 14,601-604,1978.
-!-- clapp et al. [1978]
-     data lqma /0.395, 0.410, 0.435, 0.485, 0.485, 0.451, 0.420,      &
-                0.477, 0.476, 0.426, 0.492, 0.482, 0.451, 1.0,        &
-                0.20,  0.435, 0.468, 0.200, 0.339/
-
-!-- clapp et al. [1978]
-        data lref /0.174, 0.179, 0.249, 0.369, 0.369, 0.314, 0.299,   &
-                   0.357, 0.391, 0.316, 0.409, 0.400, 0.314, 1.,      &
-                   0.1,   0.249, 0.454, 0.17,  0.236/
-
-!-- carsel and parrish [1988]
-        data lqmi/0.045, 0.057, 0.065, 0.067, 0.034, 0.078, 0.10,     &
-                  0.089, 0.095, 0.10,  0.070, 0.068, 0.078, 0.0,      &
-                  0.004, 0.065, 0.020, 0.004, 0.008/
-
-!-- clapp et al. [1978]
-       data lpsi/0.121, 0.090, 0.218, 0.786, 0.786, 0.478, 0.299,     &
-                 0.356, 0.630, 0.153, 0.490, 0.405, 0.478, 0.0,       &
-                 0.121, 0.218, 0.468, 0.069, 0.069/
-
-!-- clapp et al. [1978]
-        data lbcl/4.05,  4.38,  4.90,  5.30,  5.30,  5.39,  7.12,      &
-                  7.75,  8.52, 10.40, 10.40, 11.40,  5.39,  0.0,       &
-                  4.05,  4.90, 11.55,  2.79,  2.79/
-
-
-          dqm    = lqma(isltyp)-                               &
-                   lqmi(isltyp)
-          ref    = lref(isltyp)
-          psis   = - lpsi(isltyp)
-          qmin   = lqmi(isltyp)
-          bclh   = lbcl(isltyp)
-
-  end subroutine soilin
 
 end module module_sf_ruclsm
