@@ -58,8 +58,22 @@ use mpas_log, only: mpas_log_write
         character*256  :: err_message
         integer :: targetcell=1230989
 
-        integer, parameter :: isncovr_opt=1
+      !-- options for snow conductivity: 1 - constant, 2 - Sturm et al.,1997
+      !   integer, parameter :: isncond_opt = 1
+      !
         integer, parameter :: isncond_opt=1
+
+      !-- Snow fraction options
+      !-- option 1: original formulation using threshold snow depth to compute snow fraction
+      !integer, parameter :: isncovr_opt = 1
+      !-- option 2: the tanh formulation from Niu,G.-Y.,and Yang,Z.-L., 2007,JGR,DOI:10.1029/2007JD008674.
+      !integer, parameter :: isncovr_opt = 2
+      !-- option 3: the tanh formulation from Niu,G.-Y.,and Yang,Z with
+      !   vegetation-dependent parameters from Noah MP (personal communication with
+      !   Mike Barlage)
+      !integer, parameter :: isncovr_opt = 3
+
+        integer, parameter :: isncovr_opt=3
 
 contains
 
