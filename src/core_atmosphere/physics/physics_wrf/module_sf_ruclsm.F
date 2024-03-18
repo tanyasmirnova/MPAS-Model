@@ -1,4 +1,4 @@
-! Author: Tanya Smirnova (tanya.smirnova@noaa.gov)
+! Author: Tanya Smirnova (Tanya.Smirnova@noaa.gov)
 ! 15 march 2024 - RUC LSM is updated to the version used in RRFS version 1.
 ! Most changes are in the snow model.
 !
@@ -603,7 +603,7 @@ call physics_message('!--- initializing inside snow temp if it is not defined')
          prcpncliq = rainncv(i,j)*(1.-frzfrac(i,j))
          prcpncfr = rainncv(i,j)*frzfrac(i,j)
 !- apply the same frozen precipitation fraction to convective precip
-!- 31 mar17 - add safety temperature check in case thompson mp produces
+!- 31 mar17 - add safety temperature check in case Thompson MP produces
 !                 frozen precip at t > 273.
        if(frzfrac(i,j) > 0..and. tabs < 273.) then
          prcpculiq = max(0.,(rainbl(i,j)-rainncv(i,j))*(1.-frzfrac(i,j)))
@@ -2530,7 +2530,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                thdif,diffu,hydro,cap)
 
 !********************************************************************
-!--- calculation of canopy water (smirnova et al., 1996, eq.16) and dew
+!--- calculation of canopy water (Smirnova et al., 1996, eq.16) and dew
 
 !        drip=0.
 !        dd1=0.
@@ -2689,7 +2689,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          endif
          enddo
 !*************************************************************************
-! soilmoist solves moisture budget (smirnova et al., 1996, eq.22,28)
+! soilmoist solves moisture budget (Smirnova et al., 1996, eq.22,28)
 !           and richards eqn.
 !*************************************************************************
           call soilmoist (                                     &
@@ -2963,7 +2963,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
    33  continue
 
 !************************************************************************
-!--- the heat balance equation (smirnova et al., 1996, eq. 21,26)
+!--- the heat balance equation (Smirnova et al., 1996, eq. 21,26)
         rhcs=capice(1)
         h=1.
         fkt=tkms
@@ -3412,7 +3412,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         dzstop=1./(zsmain(2)-zsmain(1))
 
 !----- the calculation of thermal diffusivity, diffusional and ---
-!----- hydraulic conductivity (smirnova et al. 1996, eq.2,5,6) ---
+!----- hydraulic conductivity (Smirnova et al. 1996, eq.2,5,6) ---
 !tgs - the following loop is added to define the amount of frozen
 !tgs - water in soil if there is any
          do k=1,nzs
@@ -3498,7 +3498,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                thdif,diffu,hydro,cap)
 
 !********************************************************************
-!--- calculation of canopy water (smirnova et al., 1996, eq.16) and dew
+!--- calculation of canopy water (Smirnova et al., 1996, eq.16) and dew
 
         smelt=0.
         h=mavail
@@ -3625,7 +3625,7 @@ print *, 'tso before calling snowtemp: ', tso
          enddo
 
 !*************************************************************************
-!--- tqcan for solution of moisture balance (smirnova et al. 1996, eq.22,28)
+!--- tqcan for solution of moisture balance (Smirnova et al. 1996, eq.22,28)
 !    and tso,eta profiles
 !*************************************************************************
                 call soilmoist (                                   &
@@ -4699,7 +4699,7 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
 !        enddo
 !       endif
 !************************************************************************
-!--- the heat balance equation (smirnova et al., 1996, eq. 21,26)
+!--- the heat balance equation (Smirnova et al., 1996, eq. 21,26)
 
         rhcs=cap(1)
 
@@ -5018,7 +5018,7 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
        enddo
        !-- options for snow conductivity:
        !-- 1 - constant
-       !-- opt 2 -  sturm et al., 1997
+       !-- opt 2 -  Sturm et al., 1997
        keff = 0.265
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -5044,7 +5044,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
            if(newsnow <= 0. .and. snhei > 1. .and. rhosn > 250.) then
            !-- some areas with large snow depth have unrealistically 
            !-- low snow density (in the rockie's with snow depth > 1 m). 
-           !-- based on sturm et al. keff=0.452 typical for hard snow slabs
+           !-- based on Sturm et al. keff=0.452 typical for hard snow slabs
            !-- with rhosn=488 kg/m^3. thdifsn = 0.452/(2090*488)=4.431718e-7
            !-- in future a better compaction scheme is needed for these areas.
              thdifsn = 4.431718e-7
@@ -5180,7 +5180,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
        endif
 
 !************************************************************************
-!--- the heat balance equation (smirnova et al. 1996, eq. 21,26)
+!--- the heat balance equation (Smirnova et al. 1996, eq. 21,26)
 !18apr08 nmelt is the flag for melting, and snoh is heat of snow phase changes
        nmelt=0
        snoh=0.
@@ -5571,7 +5571,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         !-- old version thdifsn = 0.265/rhocsn
           thdifsn = 0.265/rhocsn
         else
-        !-- 07jun19 - thermal conductivity (k_eff) from sturm et al.(1997)
+        !-- 07jun19 - thermal conductivity (k_eff) from Sturm et al.(1997)
         !-- keff = 10. ** (2.650 * rhosn*1.e-3 - 1.652)
            fact = 1.
            if(rhosn < 156. .or. (newsnow > 0. .and. rhonewsn < 156.)) then
@@ -5582,7 +5582,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
            if(newsnow <= 0. .and. snhei > 1. .and. rhosn > 250.) then
            !-- some areas with large snow depth have unrealistically 
            !-- low snow density (in the rockie's with snow depth > 1 m). 
-           !-- based on sturm et al. keff=0.452 typical for hard snow slabs
+           !-- based on Sturm et al. keff=0.452 typical for hard snow slabs
            !-- with rhosn=488 kg/m^3. thdifsn = 0.452/(2090*488)=4.431718e-7
            !-- in future a better compaction scheme is needed for these areas.
              thdifsn = 4.431718e-7
@@ -6315,7 +6315,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
               tranf,transum)
 
 !-------------------------------------------------------------------
-!--- tranf(k) - the transpiration function (smirnova et al. 1996, eq. 18,19)
+!--- tranf(k) - the transpiration function (Smirnova et al. 1996, eq. 18,19)
 !*******************************************************************
 ! nx,ny,nzs - dimensions of soil domain
 ! soiliqw - volumetric liquid soil moisture at the main levels (m^3/m^3)
