@@ -61,19 +61,38 @@ use mpas_log, only: mpas_log_write
       !-- options for snow conductivity: 1 - constant, 2 - Sturm et al.,1997
       !   integer, parameter :: isncond_opt = 1
       !
-        integer, parameter :: isncond_opt=1
+        integer, parameter :: isncond_opt=2
 
       !-- Snow fraction options
       !-- option 1: original formulation using threshold snow depth to compute snow fraction
-      !integer, parameter :: isncovr_opt = 1
+      !integer, parameter :: isncovr_opt = 1 (default)
       !-- option 2: the tanh formulation from Niu,G.-Y.,and Yang,Z.-L., 2007,JGR,DOI:10.1029/2007JD008674.
       !integer, parameter :: isncovr_opt = 2
       !-- option 3: the tanh formulation from Niu,G.-Y.,and Yang,Z with
       !   vegetation-dependent parameters from Noah MP (personal communication with
       !   Mike Barlage)
       !integer, parameter :: isncovr_opt = 3
+      !-- Values of parameters are scale-dependent, have to be tuned for a given application
+      !-- Tables below are for 21-class MODI-RUC (MODIFIED_IGBP_MODIS_NOAH_15s is used in HRRR and RRFS)
+      !-- for 3-km RRFS application
+        real, dimension(30), parameter ::        sncovfac =     & 
+     &                    (/ 0.030, 0.030, 0.030, 0.030, 0.030, &
+     &                       0.016, 0.016, 0.020, 0.020, 0.020, &
+     &                       0.020, 0.014, 0.042, 0.026, 0.030, &
+     &                       0.016, 0.030, 0.030, 0.030, 0.030, &
+     &                       0.000, 0.000, 0.000, 0.000, 0.000, &
+     &                       0.000, 0.000, 0.000, 0.000, 0.000 /)
+       real, dimension(30), parameter ::         mfsno =        &  
+     &                  (/  1.00, 1.00, 1.00, 1.00, 2.00, 2.00, &
+     &                      2.00, 2.00, 2.00, 2.00, 2.00, 2.00, &
+     &                      3.00, 3.00, 2.00, 2.00, 2.00, 2.00, &
+     &                      2.00, 2.00, 0.00, 0.00, 0.00, 0.00, &
+     &                      0.00, 0.00, 0.00, 0.00, 0.00, 0.00 /)
 
-        integer, parameter :: isncovr_opt=3
+      !--
+      integer, parameter :: isncovr_opt=2
+      !--
+
 
 contains
 
@@ -1393,7 +1412,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                rainf, snth, newsn, prcpms, newsnms             , &
                t3, upflux, xinet
    real    ::  snhei_crit, snhei_crit_newsn, keep_snow_albedo, snowfracnewsn
-   real    ::  newsnowratio, dd1, snowfrac2
+   real    ::  newsnowratio, dd1, snowfrac2, m
 
    real    ::  rhonewgr,rhonewice
 
@@ -1621,25 +1640,26 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          snowfrac=min(1.,snhei/(2.*snhei_crit))
       elseif(isncovr_opt == 2) then
         snowfrac=min(1.,snhei/(2.*snhei_crit))
-        if(ivgtyp == bare) then
+        !if(ivgtyp == bare) then
         !if(ivgtyp == glacier .or. ivgtyp == bare) then
         !-- sparsely vegetated or land ice
-          snowfrac2 = tanh( snhei/(2.5 * 0.2 *(rhosn/rhonewsn)**1.))
-        else
-          !-- niu&yang: znt=0.01 m for 1 degree (100km) resolution tests
+        !  snowfrac2 = tanh( snhei/(2.5 * 0.2 *(rhosn/rhonewsn)**1.))
+        !else
+          !-- Niu&Yang: znt=0.01 m for 1 degree (100km) resolution tests
           !  on 3-km scale use actual roughness, but not higher than 0.2 m.
           !  the factor is 20 for forests (~100/dx = 33.)
-          snowfrac2 = tanh( snhei/(2.5 * min(0.2,znt) *(rhosn/rhonewsn)**1.))
-        endif
+        snowfrac2 = tanh( snhei/(2.5 * min(0.2,znt) *(rhosn/rhonewsn)**1.))
+        !endif
         !-- snow fraction is average between method 1 and 2
         snowfrac = 0.5*(snowfrac+snowfrac2)
       else
       !-- isncovr_opt=3
-        !m = msnf ! vegetation dependent facsnf/msnf from noah mp
-        !-- for RRFS a factor 10. was added to 'facsnf' to get reasonal values of
-        !   snow cover fractions on the 3-km scale.
-        !   this factor is scale dependent.
-        snowfrac = tanh( snhei/(0.2 *(rhosn/rhonewsn)**1.))
+        !m = mfsno(ivgtyp) 
+        m = 1.
+        !-- vegetation dependent facsnf/msnf from noahmp
+        !-- for RRFS factor 10. was added to noahmp 'facsnf' to get reasonal values of
+        !   snow cover fractions on the 3-km scale. This factor is scale dependent.
+        snowfrac = tanh( snhei/(10. * sncovfac(ivgtyp)*(rhosn/rhonewsn)**m))
       endif
 
        if(newsn > 0. ) then
@@ -1692,11 +1712,27 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 ! hwlps with these biases..
      if( snow_mosaic == 1.) then
          albsn=alb_snow
+         if(keep_snow_albedo > 0.9 .and. albsn < 0.4) then
+         !-- Albedo correction with fresh snow and deep snow pack
+         !-- will reduce warm bias in western Canada
+         !-- and US West coast, where max snow albedo is low (0.3-0.5).
+           !print *,'ALB increase to 0.7',alb_snow,snhei,snhei_crit,albsn,i,j
+           albsn = 0.7
+         endif
+
          emiss= emissn
      else
          albsn   = max(keep_snow_albedo*alb_snow,               &
                    min((alb_snow_free +                         &
            (alb_snow - alb_snow_free) * snowfrac), alb_snow))
+         if(newsn > 0. .and. keep_snow_albedo > 0.9 .and. albsn < 0.4) then
+         !-- Albedo correction with fresh snow and deep snow pack
+         !-- will reduce warm bias in western Canada
+         !-- and US West coast, where max snow albedo is low (0.3-0.5).
+           !print *,'ALB increase to 0.7',alb_snow,snhei,snhei_crit,albsn,i,j
+           ALBsn = 0.7
+           !print *,'NO mosaic ALB increase to 0.7',alb_snow,snhei,snhei_crit,alb,i,j
+         endif
 
          emiss   = max(keep_snow_albedo*emissn,                 &
                    min((emiss_snowfree +                         &
@@ -2073,26 +2109,25 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          snowfrac=min(1.,snhei/(2.*snhei_crit))
       elseif(isncovr_opt == 2) then
         snowfrac=min(1.,snhei/(2.*snhei_crit))
-        if(ivgtyp == bare) then
         !if(ivgtyp == glacier .or. ivgtyp == bare) then
         !-- sparsely vegetated or land ice
-          snowfrac2 = tanh( snhei/(2.5 * 0.2 *(rhosn/rhonewsn)**1.))
-        else
-          !-- niu&yang: znt=0.01 m for 1 degree (100km) resolution tests
+        !  snowfrac2 = tanh( snhei/(2.5 * 0.2 *(rhosn/rhonewsn)**1.))
+        !else
+          !-- Niu&Yang: znt=0.01 m for 1 degree (100km) resolution tests
           !  on 3-km scale use actual roughness, but not higher than 0.2 m.
           !  the factor is 20 for forests (~100/dx = 33.)
-          snowfrac2 = tanh( snhei/(2.5 * min(0.2,znt) *(rhosn/rhonewsn)**1.))
-        endif
+        snowfrac2 = tanh( snhei/(2.5 * min(0.2,znt) *(rhosn/rhonewsn)**1.))
+        !endif
         !-- snow fraction is average between method 1 and 2
         snowfrac = 0.5*(snowfrac+snowfrac2)
       else
       !-- isncovr_opt=3
-        !m = msnf ! vegetation dependent facsnf/msnf from noah mp
-        !-- for rrfs a factor 10. was added to 'facsnf' to get reasonal values
-        !of
-        !   snow cover fractions on the 3-km scale.
-        !   this factor is scale dependent.
-        snowfrac = tanh( snhei/(0.2 *(rhosn/rhonewsn)**1.))
+        !m = mfsno(ivgtyp) 
+        m = 1.
+        !-- vegetation dependent facsnf/msnf from noahmp
+        !-- for RRFS factor 10. was added to noahmp 'facsnf' to get reasonal values of
+        !   snow cover fractions on the 3-km scale. This factor is scale dependent.
+        snowfrac = tanh( snhei/(10. * sncovfac(ivgtyp)*(rhosn/rhonewsn)**m))
       endif
 
      endif
