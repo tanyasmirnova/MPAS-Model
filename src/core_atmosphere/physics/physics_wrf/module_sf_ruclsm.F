@@ -1640,7 +1640,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          snowfrac=min(1.,snhei/(2.*snhei_crit))
       elseif(isncovr_opt == 2) then
         snowfrac=min(1.,snhei/(2.*snhei_crit))
-        !if(ivgtyp == bare) then
         !if(ivgtyp == glacier .or. ivgtyp == bare) then
         !-- sparsely vegetated or land ice
         !  snowfrac2 = tanh( snhei/(2.5 * 0.2 *(rhosn/rhonewsn)**1.))
@@ -6746,7 +6745,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !   26:   lava
 !   27:   white sand
 
-! modis vegetation categories from vegparm.tbl
+! modis vegetation categories from VEGPARM.TBL
 !    1:   evergreen needleleaf forest
 !    2:   evergreen broadleaf forest
 !    3:   deciduous needleleaf forest
@@ -6961,7 +6960,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
         if(.not.rdlai2d) lai = laitoday(ivgtyp)
      endif
 
-! parameters from soilparm.tbl
+! parameters from SOILPARM.TBL
           rhocs  = 0.
           bclh   = 0.
           dqm    = 0.
@@ -7233,12 +7232,12 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 !                lai: leaf area index (dimensionless)
 !             maxalb: upper bound on maximum albedo over deep snow
 !
-!-----read in vegetaion properties from vegparm.tbl
+!-----read in vegetaion properties from VEGPARM.TBL
 !
-        open(19, file='vegparm.tbl',form='formatted',status='old',iostat=ierr)
+        open(19, file='VEGPARM.TBL',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening vegparm.tbl'
+          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening VEGPARM.TBL'
           fatal_error ( message )
         end if
 
@@ -7302,10 +7301,10 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
            read (19,*)crop
            read (19,*)
            read (19,*,iostat=ierr)urban
-           if ( ierr /= 0 ) call wrf_message     (  "-------- vegparm.tbl read error --------")
-           if ( ierr /= 0 ) call wrf_message     (  "problem read urban from vegparm.tbl")
-           if ( ierr /= 0 ) call wrf_message     (  " -- use updated version of vegparm.tbl  ")
-           if ( ierr /= 0 ) fatal_error (  "problem read urban from vegparm.tbl")
+           if ( ierr /= 0 ) call wrf_message     (  "-------- VEGPARM.TBL read error --------")
+           if ( ierr /= 0 ) call wrf_message     (  "problem read urban from VEGPARM.TBL")
+           if ( ierr /= 0 ) call wrf_message     (  " -- use updated version of VEGPARM.TBL  ")
+           if ( ierr /= 0 ) fatal_error (  "problem read urban from VEGPARM.TBL")
 
         endif
 
@@ -7318,7 +7317,7 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
 
 
         if (lumatch == 0) then
-           fatal_error ("land use dataset '"//mminluruc//"' not found in vegparm.tbl.")
+           fatal_error ("land use dataset '"//mminluruc//"' not found in VEGPARM.TBL")
         endif
 
  !     end if
@@ -7349,12 +7348,12 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
       call wrf_dm_bcast_integer ( urban       , 1 )
 
 !
-!-----read in soil properties from soilparm.tbl
+!-----read in soil properties from SOILPARM.TBL
 !
-        open(19, file='soilparm.tbl',form='formatted',status='old',iostat=ierr)
+        open(19, file='SOILPARM.TBL',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening soilparm.tbl'
+          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening SOILPARM.TBL'
           fatal_error ( message )
         end if
 
@@ -7419,13 +7418,13 @@ print *,'infmax,infmax1,hydro(1)*soiliqw(1),-totliq', &
       endif
 
 !
-!-----read in general parameters from genparm.tbl
+!-----read in general parameters from GENPARM.TBL
 !
       if ( wrf_dm_on_monitor() ) then
-        open(19, file='genparm.tbl',form='formatted',status='old',iostat=ierr)
+        open(19, file='GENPARM.TBL',form='formatted',status='old',iostat=ierr)
         if(ierr .ne. open_ok ) then
           write(message,fmt='(a)') &
-          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening genparm.tbl'
+          'module_sf_ruclsm.f: soil_veg_gen_parm: failure opening GENPARM.TBL'
           fatal_error ( message )
         end if
 
