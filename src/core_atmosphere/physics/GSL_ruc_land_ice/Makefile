@@ -6,19 +6,25 @@ dummy:
 	echo "****** compiling RUC land and sea ice models ******"
 
 OBJS = \
-	module_ruc_land.o    \
-	module_ruc_ice.o
+	module_sf_sfcdiags_ruclsm.o \
+	module_ruc_land.o \
+	module_ruc_ice.o \
+        ruclsm_land_driver.o \
+        ruclsm_ice_driver.o  
 
-land_ice: $(OBJS)
+ruc_land_ice: $(OBJS)
 	ar -ru ./../libphys.a $(OBJS)
 
 # DEPENDENCIES:
-module_mp_thompson.o: \
+ruclsm_land_driver.o: \
 	module_ruc_land.o \
-	module_ruc_ice.o
+	module_sf_sfcdiags_ruclsm.o
+ruclsm_ice_driver.o:  \
+	module_ruc_ice.o \
+	module_sf_sfcdiags_ruclsm.o
 
 clean:
-	$(RM) *.f90 *.o *.mod
+	$(RM) *.F90 *.o *.mod
 	@# Certain systems with intel compilers generate *.i files
 	@# This removes them during the clean process
 	$(RM) *.i
