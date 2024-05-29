@@ -62,9 +62,11 @@ core_microphysics: core_physics_init core_physics_mmm
 core_ruclsm: core_physics_init core_physics_mmm
 	echo "Pulling in RUCLSM submodule" ; \
         (cd GSL_ruc_land_ice; \
-	cp ./drivers/mpas/module_ruc_land.F90 .; \
-	cp ./drivers/mpas/module_ruc_ice.F90 .; \
-	cp ./drivers/mpas/module_sf_sfcdiags_ruclsm.F90 .; \
+	cp ./drivers/mpas/ruclsm_land_driver.F90 .; \
+	cp ./drivers/mpas/ruclsm_ice_driver.F90 .; \
+	cp ./src/module_ruc_land.F90 .; \
+	cp ./src/module_ruc_ice.F90 .; \
+	cp ./src/module_sf_sfcdiags_ruclsm.F90 .; \
        	$(MAKE) all COREDEF="$(COREDEF)")
 
 core_physics_wrf: core_physics_init core_physics_mmm
