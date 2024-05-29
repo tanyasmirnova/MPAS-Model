@@ -59,13 +59,21 @@ core_microphysics: core_physics_init core_physics_mmm
 	(if [ -f physics_wrf/module_mp_thompson.F ]; then rm physics_wrf/module_mp_thompson.F; else echo "No old module_mp_thompson.F file found"; fi)
 	(cd GSL_cloud_physics; cp ./drivers/mpas/module_mp_thompson.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
 
+core_ruclsm: core_physics_init core_physics_mmm
+	echo "Pulling in RUCLSM submodule" ; \
+        (cd GSL_ruc_land_ice; \
+	cp ./drivers/mpas/module_ruc_land.F90 .; \
+	cp ./drivers/mpas/module_ruc_ice.F90 .; \
+	cp ./drivers/mpas/module_sf_sfcdiags_ruclsm.F90 .; \
+       	$(MAKE) all COREDEF="$(COREDEF)")
+
 core_physics_wrf: core_physics_init core_physics_mmm
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_physics_init: $(OBJS_init)
 	ar -ru libphys.a $(OBJS_init)
 
-core_physics: core_microphysics core_physics_wrf
+core_physics: core_microphysics core_ruclsm core_physics_wrf
 	($(MAKE) phys_interface COREDEF="$(COREDEF)")
 	ar -ru libphys.a $(OBJS)
 
