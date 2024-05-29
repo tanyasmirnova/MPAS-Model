@@ -2,3 +2,7 @@
 	path = src/core_atmosphere/physics/GSL_cloud_physics
 	url = https://github.com/AndersJensen-NOAA/GSL_cloud_physics.git
 	branch = develop
+[submodule "RUCLSM"]
+	path = src/core_atmosphere/physics/GSL_ruc_land_ice
+	url = https://github.com/tanyasmirnova/GSL_ruc_land_ice.git
+	branch = develop
