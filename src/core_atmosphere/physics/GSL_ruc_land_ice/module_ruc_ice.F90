@@ -20,9 +20,6 @@ use mpas_log, only: mpas_log_write
 #define fatal_error(m) call wrf_error_fatal( m )
 #endif
 
-use module_ruc_land
-
-
 contains
 
 !-----------------------------------------------------------------
@@ -315,7 +312,6 @@ contains
                                                           curat, &
                                                        infiltrp
    real      ::  cq,r61,r273,arp,brp,x,evs,eis
-
    integer   ::  iland,isoil,iforest
 
    integer   ::  i,j,k,nzs,nzs1,nddzs
@@ -2284,5 +2280,67 @@ contains
 !------------------------------------------------------------------------
    end subroutine snowseaice
 !------------------------------------------------------------------------
+   function qsn(tn,t)
+!****************************************************************
+   real,     dimension(1:5001),  intent(in   )   ::  t
+   real,     intent(in  )   ::  tn
+
+   real    qsn, r,r1,r2
+   integer i
+
+       r=(tn-173.15)/.05+1.
+       i=int(r)
+       if(i.ge.1) goto 10
+       i=1
+       r=1.
+  10   if(i.le.5000) goto 20
+       i=5000
+       r=5001.
+  20   r1=t(i)
+       r2=r-i
+       qsn=(t(i+1)-r1)*r2 + r1
+!-----------------------------------------------------------------------
+   end function qsn
+!------------------------------------------------------------------------
+       subroutine vilka(tn,d1,d2,pp,qs,ts,tt,nstep,ii,j,iland,isoil)
+!--------------------------------------------------------------
+!--- vilka finds the solution of energy budget at the surface
+!--- using table t,qs computed from clausius-klapeiron
+!--------------------------------------------------------------
+   real,     dimension(1:5001),  intent(in   )   ::  tt
+   real,     intent(in  )   ::  tn,d1,d2,pp
+   integer,  intent(in  )   ::  nstep,ii,j,iland,isoil
+
+   real,     intent(out  )  ::  qs, ts
+
+   real    ::  f1,t1,t2,rn
+   integer ::  i,i1
+
+       i=(tn-1.7315e2)/.05+1
+       t1=173.1+float(i)*.05
+       f1=t1+d1*tt(i)-d2
+       i1=i-f1/(.05+d1*(tt(i+1)-tt(i)))
+       i=i1
+       if(i.gt.5000.or.i.lt.1) goto 1
+  10   i1=i
+       t1=173.1+float(i)*.05
+       f1=t1+d1*tt(i)-d2
+       rn=f1/(.05+d1*(tt(i+1)-tt(i)))
+       i=i-int(rn)
+       if(i.gt.5000.or.i.lt.1) goto 1
+       if(i1.ne.i) goto 10
+       ts=t1-.05*rn
+       qs=(tt(i)+(tt(i)-tt(i+1))*rn)/pp
+       goto 20
+!   1   print *,'crash in surface energy budget - stop'
+!   1   print *,'     avost in vilka     table index= ',i
+    1   print *,d1,d2,pp,tt(i),tt(i+1)
+    !   write(0,*),'i,j=',ii,j,'lu_index = ',iland, 'psfc[hpa] = ',pp, 'tsfc = ',tn,&
+    !             'tti=',tt(i),'ttip1=',tt(i+1),'d1=',d1
+       fatal_error ('  crash in surface energy budget  ' )
+   20  continue
+!-----------------------------------------------------------------------
+   end subroutine vilka
+!-----------------------------------------------------------------------
 
 end module module_ruc_ice

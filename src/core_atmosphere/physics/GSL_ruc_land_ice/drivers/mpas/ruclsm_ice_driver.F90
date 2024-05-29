@@ -353,14 +353,6 @@ contains
                     ims, ime, jms, jme, kms, kme,       &
                     its, ite, jts, jte, kts, kte        &
                           )
-       call sfcdiags_ruclsm( &
-                    hfx    , qfx  , tsk , qsfc, chs ,   & 
-                    chs2   , cqs2 , t2  , th2 , q2  ,   &
-                    psfc2d , t3d  , qv3d, dz  , cp  , R_d, &
-                    rovcp  , rho3d, p3d , snow, cqs ,   &
-                    ids, ide , jds , jde , kds , kde ,  &
-                    ims, ime , jms , jme , kms , kme ,  &
-                    )
 
 !-----------------------------------------------------------------
    end subroutine ruc_ice_driver
