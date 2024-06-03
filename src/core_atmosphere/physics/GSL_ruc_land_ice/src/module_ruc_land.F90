@@ -2396,7 +2396,7 @@ contains
 !  endif
    alfa=1.
 ! field capacity
-   fc=max(qmin,ref*0.5)
+   fc=ref
    fex_fc=1.
    if((soilmois(1)+qmin) > fc .or. (qvatm-qvg) > 0.) then
       soilres = 1.
@@ -3042,7 +3042,7 @@ contains
 
 !  check if all snow can evaporate during dt
          beta=1.
-         epdt = epot * ras *delt*umveg
+         epdt = epot * ras *delt
          if(epdt.gt.0. .and. snwepr.le.epdt) then
             beta=snwepr/max(1.e-8,epdt)
             snwe=0.
