@@ -2175,7 +2175,7 @@
                      description="logical for configuration of input ozone data in RRMTG long- and short-wave radiation"
                      possible_values=".true. for using monthly-varying ozone data; .false. for using fixed vertical profile"/>
 
-                <nml_option name="config_microp_re" type="logical" default_value="false" in_defaults="false"
+                <nml_option name="config_microp_re" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="logical for calculation of the effective radii for cloud water, cloud ice, and snow"
                      possible_values=".true. for calculating effective radii; .false. for using defaults in RRTMG radiation"/>
@@ -2504,6 +2504,10 @@
                 <var name="graupelncv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step grid-scale precipitation of graupel"
                      packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;lsm_ruc_in"/>
+
+		<var name="nwfa_emissions" type="real" dimensions="nCells Time" units="nb kg^{-1} s^{-1}"
+                     description="Surface emissions of water-friendly aerosols for microphysics"
+                     packages="mp_thompson_in"/>
 
                 <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"
