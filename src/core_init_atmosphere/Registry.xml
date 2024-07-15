@@ -41,11 +41,12 @@
                      description="The number of atmospheric levels, always one more than the number of layers"/>
                 <dim name="nMonths" definition="namelist:config_months"
                      description="The number of months in a year"/>
-                     description="The number of soil categories used in the land surface model"/>
 		<dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
                      description="The number of landuse categories used in the land surface model"/>
                 <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
                      description="The number of soil categories used in the land surface model"/>
+	        <dim name="nVegOpt" definition="namelist:config_nvegopt"
+                     description="The number of vegetation fraction option: 1 - clim, 2 - real-time"/>
         </dims>
 
 
@@ -138,6 +139,11 @@
                      units='-'
                      description="The number of landuse categories used by the LSM."
                      possible_values="16"/>
+
+                <nml_option name="config_nvegopt"               type="integer"       default_value="1"
+                     units='-'
+                     description="The number of vegetation fraction option used by the LSM."
+                     possible_values="1"/>
 
         </nml_record>
 
@@ -311,7 +317,7 @@
         </nml_record>
 
         <nml_record name="physics" in_defaults="false">
-                <nml_option name="config_tsk_seaice_threshold" type="real" default_value="100." units="K"
+                <nml_option name="config_tsk_seaice_threshold" type="real" default_value="271." units="K"
                      description="surface temperature threshold below which water points are set to seaice points"
                      possible_values="Positive real values"/>
         </nml_record>
