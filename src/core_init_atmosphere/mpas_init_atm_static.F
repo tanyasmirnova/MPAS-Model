@@ -410,8 +410,14 @@
 
 !
 ! Interpolate SOILCAT_TOP
+    case('STASGO')
+       call mpas_log_write('Using STATSGO 30-arc-second soil type dataset')
+       geog_sub_path = 'soiltype_top_30s/'
+    case('BNU')
+       call mpas_log_write('Using BNU 30-arc-second soil type dataset')
+       geog_sub_path = 'bnu_soiltype_top/'
+    case default
 !
- geog_sub_path = 'soiltype_top_30s/'
 
  call mpas_log_write('--- start interpolate SOILCAT_TOP')
  call interp_soilcat(mesh, tree, trim(geog_data_path)//trim(geog_sub_path), iswater_soil, &
