@@ -227,6 +227,8 @@
           isurban = 1
        case('MODIFIED_IGBP_MODIS_NOAH')
           isurban = 13
+       case('MODIFIED_IGBP_MODIS_NOAH_15s')
+          isurban = 13
        case('SiB')
           isurban = 11
        case('LW12')
