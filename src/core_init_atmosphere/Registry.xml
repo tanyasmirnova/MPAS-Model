@@ -137,6 +137,11 @@
                      description="The number of months in a year"
                      possible_values="Positive integer values"/>
 
+	        <nml_option name="config_nsoilcat"              type="integer"       default_value="16"
+                     units='-'
+                     description="The number of soil categories used by the LSM."
+                     possible_values="16"/>
+
         </nml_record>
 
         <nml_record name="data_sources" in_defaults="true">

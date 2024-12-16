@@ -126,6 +126,7 @@
  character(len=StrKIND), pointer :: config_vegfrac_data
  character(len=StrKIND), pointer :: config_albedo_data
  character(len=StrKIND), pointer :: config_maxsnowalbedo_data
+ character(len=StrKIND), pointer :: config_soilcat_data
  character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
  character(len=StrKIND+1) :: geog_sub_path       ! subdirectory names in config_geog_data_path, with trailing slash
 
@@ -214,6 +215,7 @@
 
  call mpas_pool_get_config(configs, 'config_geog_data_path', config_geog_data_path)
  call mpas_pool_get_config(configs, 'config_landuse_data', config_landuse_data)
+ call mpas_pool_get_config(configs, 'config_soilcat_data', config_soilcat_data)
  call mpas_pool_get_config(configs, 'config_topo_data', config_topo_data)
  call mpas_pool_get_config(configs, 'config_vegfrac_data', config_vegfrac_data)
  call mpas_pool_get_config(configs, 'config_albedo_data', config_albedo_data)
@@ -419,6 +421,7 @@
 
 !
 ! Interpolate SOILCAT_TOP
+ select case(trim(config_soilcat_data))
     case('STASGO')
        call mpas_log_write('Using STATSGO 30-arc-second soil type dataset')
        geog_sub_path = 'soiltype_top_30s/'
@@ -426,6 +429,13 @@
        call mpas_log_write('Using BNU 30-arc-second soil type dataset')
        geog_sub_path = 'bnu_soiltype_top/'
     case default
+       call mpas_log_write('*****************************************************************',messageType=MPAS_LOG_ERR)
+       call mpas_log_write('Invalid soil type dataset'''//trim(config_soilcat_data) &
+                                     //''' selected for config_soilcat_data',                  messageType=MPAS_LOG_ERR)
+       call mpas_log_write('   Possible options are: ''STASGO'',''BNU''',                      messageType=MPAS_LOG_ERR)
+       call mpas_log_write('*****************************************************************',messageType=MPAS_LOG_ERR)
+       call mpas_log_write('Please correct the namelist.', messageType=MPAS_LOG_CRIT)
+ end select            
 !
 
  call mpas_log_write('--- start interpolate SOILCAT_TOP')
