@@ -96,6 +96,7 @@
 
 !local pointers:
  logical,pointer:: config_do_restart,  &
+                   config_do_DAcycling,&
                    config_frac_seaice, &
                    config_sfc_albedo
 
@@ -135,6 +136,7 @@
 !call mpas_log_write('--- enter subroutine landuse_init_forMPAS:')
 
  call mpas_pool_get_config(configs,'config_do_restart' ,config_do_restart )
+ call mpas_pool_get_config(configs,'config_do_DAcycling' ,config_do_DAcycling )
  call mpas_pool_get_config(configs,'config_frac_seaice',config_frac_seaice)
  call mpas_pool_get_config(configs,'config_sfc_albedo' ,config_sfc_albedo )
  call mpas_pool_get_config(configs,'config_lsm_scheme' ,config_lsm_scheme )
@@ -179,6 +181,7 @@
 !call mpas_log_write('--- config_frac_seaice = $1',logicArgs=(/config_frac_seaice/))
 !call mpas_log_write('--- xice_threshold     = $r',realArgs=(/xice_threshold/))
 
+ if((config_lsm_scheme .ne. 'sf_ruc')) then
 !reads in the landuse properties from landuse.tbl:
  if(dminfo % my_proc_id == IO_NODE) then
     !get a unit to open init file:
@@ -264,7 +267,9 @@
 !call mpas_log_write('--- isice   =$i',intArgs=(/isice/))
 !call mpas_log_write('--- iswater =$i',intArgs=(/iswater/))
 !call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
- if(config_do_restart) then
+ endif ! not sf_ruc
+
+ if(config_do_restart .or. config_do_DAcycling) then
     call mpas_log_write('--- config_do_restart =$l', logicArgs=(/config_do_restart/))
     call mpas_log_write('--- skip the end of landuse_init_forMPAS')
     return
